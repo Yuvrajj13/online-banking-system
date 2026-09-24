@@ -1,98 +1,181 @@
+# 🏦 Online Banking System (Full-Stack)
 
-# Online Banking Full Stack Project Frontent Readme File
+[![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://www.oracle.com/java/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.7+-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org/)
+[![Redux](https://img.shields.io/badge/Redux-Toolkit-purple.svg)](https://redux.js.org/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-blue)](https://www.mysql.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-This is a full-stack project. You can access the backend details of the project from the link below. At this point, we will focus on the frontend.
+A robust, full-stack enterprise **Online Banking Web Application** built with **Java Spring Boot**, **React with Redux**, and **MySQL**. The system enables users to manage multi-type bank accounts, execute real-time fund transfers and beneficiary payments, track financial analytics, and conduct secure transactions with JWT token-based authentication.
 
-Java Spring Online Banking Rest Api [Java Spring Rest API]( https://github.com/Berko01/Advanced-Backend-Project-With-Java-Spring-Online-Banking-Rest-Api)
+---
 
+## 🌟 Key Features
 
-The application is a Frontend project prepared for the Online Banking Rest API. React and Redux are used in the frontend of the application. The project is a single-page application, and I have fully leveraged the benefits provided by Redux. Every component you will see in the project is connected to the Redux Store. When the state of one component changes, all components that need to update their state automatically do so, providing users with real-time information.
+- **🔐 Secure Authentication & Authorization**:
+  - Stateless authentication using **JSON Web Tokens (JWT)**.
+  - Salting & Password hashing via **BCrypt**.
+  - Custom Spring request interceptors (`AppInterceptor`) protecting sensitive routes.
+  - Auto-verification flow for seamless user onboarding.
 
-Users can register, log in, view their account history, open new accounts, make transfers between accounts, deposit money, withdraw money, and make payments. Additionally, a self-updating chart has been prepared for users to view their account flows. In short, the components are constantly in communication with the backend, ensuring seamless interaction.
+- **💳 Account Management**:
+  - Create and manage multiple bank accounts (Checking, Savings, Business).
+  - Auto-generated unique bank account numbers.
+  - Real-time aggregated balance computation.
 
-If you want to watch the project video you can visit my LinkedIn account:
+- **💸 Transaction & Payment Engine**:
+  - Deposits, withdrawals, and instant inter-account transfers.
+  - Beneficiary payment management with unique reference tracking.
+  - **ACID-compliant transactions** ensuring data safety during fund movement.
 
-My LinkedIn Account [LinkedIn]( https://www.linkedin.com/feed/)
+- **📊 Financial Analytics & Dashboard**:
+  - Interactive charts powered by **Recharts** displaying spending trends.
+  - Comprehensive history views built with optimized MySQL Views (`v_transaction_history`, `v_payments`).
+  - Material-UI (MUI) sleek interface with responsive design.
 
+---
 
+## 🛠️ Technology Stack
 
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 18, Redux Toolkit, Redux Thunk, Material-UI (MUI), Axios, React Router v6, Recharts |
+| **Backend** | Java 21, Spring Boot 2.7, Spring Data JPA, Spring Security Crypto, JJWT |
+| **Database** | MySQL 8.0 (Relational schema, Native SQL Queries, Foreign Keys, SQL Views) |
+| **Build Tools** | Maven, npm |
 
-If you want to learn more about React and Redux, you can check out my article on React and Redux:
+---
 
-React and Redux Article [My Article]( https://medium.com/@berkindundar2001/react-nedir-ve-react-redux-neden-%C3%B6nemlidir-4c846d7a5124)
+## 📸 Application Screenshots
 
+### 🔑 Login & Authentication
+![Login Page](loginPage.png)
 
-Feel free to ask if you have any further questions or need additional information!
+### 📊 Dashboard & Financial Analytics
+![Dashboard View](ProjecPage1.png)
 
+### 💳 Account Details & Transfers
+![Account Details](ProjectPage2.png)
 
+### 💸 Beneficiary Payments & History
+![Payments Page](ProjectPage3.png)
 
+![Transaction History](ProjectPage5.png)
 
+---
 
+## ⚙️ Local Setup & Running Guide
 
+### Prerequisites
+- **JDK 17 or higher** (JDK 21 recommended)
+- **Node.js** (v18+) and **npm**
+- **MySQL Server** (v8.0+)
 
-## Project Images and Components
+---
 
-![Uygulama Ekran Görüntüsü](loginPage.png)
+### Step 1: Database Setup
+Launch MySQL workbench or command line and execute the database schema:
 
-![Uygulama Ekran Görüntüsü](ProjecPage1.png)
+```sql
+CREATE DATABASE IF NOT EXISTS demo_bank_v1;
+USE demo_bank_v1;
 
-![Uygulama Ekran Görüntüsü](ProjectPage2.png)
+CREATE TABLE users (
+    user_id     INT AUTO_INCREMENT PRIMARY KEY,
+    first_name  VARCHAR(100) NOT NULL,
+    last_name   VARCHAR(100) NOT NULL,
+    email       VARCHAR(150) NOT NULL UNIQUE,
+    password    VARCHAR(255) NOT NULL,
+    token       VARCHAR(255),
+    code        VARCHAR(50),
+    verified    TINYINT NOT NULL DEFAULT 1,
+    verified_at DATE,
+    create_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 
-![Uygulama Ekran Görüntüsü](ProjectPage3.png)
+CREATE TABLE accounts (
+    account_id     INT AUTO_INCREMENT PRIMARY KEY,
+    user_id        INT NOT NULL,
+    account_number VARCHAR(50) NOT NULL UNIQUE,
+    account_name   VARCHAR(100) NOT NULL,
+    account_type   VARCHAR(50) NOT NULL,
+    balance        DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+    create_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at     DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
 
-![Uygulama Ekran Görüntüsü](ProjectPage5.png)
+CREATE TABLE transaction_history (
+    transaction_id   INT AUTO_INCREMENT PRIMARY KEY,
+    account_id       INT NOT NULL,
+    transaction_type VARCHAR(50) NOT NULL,
+    amount           DECIMAL(15,2) NOT NULL,
+    source           VARCHAR(50),
+    status           VARCHAR(20),
+    reason_code      VARCHAR(255),
+    created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (account_id) REFERENCES accounts(account_id)
+);
 
+CREATE TABLE payments (
+    payment_id         INT AUTO_INCREMENT PRIMARY KEY,
+    account_id         INT NOT NULL,
+    beneficiary        VARCHAR(150) NOT NULL,
+    beneficiary_acc_no VARCHAR(50) NOT NULL,
+    amount              DECIMAL(15,2) NOT NULL,
+    reference_no       VARCHAR(100),
+    status              VARCHAR(20),
+    reason_code        VARCHAR(255),
+    created_at          DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (account_id) REFERENCES accounts(account_id)
+);
 
-  
-## Features
+CREATE VIEW v_transaction_history AS
+SELECT
+    th.transaction_id, th.account_id, a.user_id, th.transaction_type,
+    th.amount, th.source, th.status, th.reason_code, th.created_at
+FROM transaction_history th
+JOIN accounts a ON th.account_id = a.account_id;
 
-- React and Redux
-- Single Page Application
-- Material UI
-
-
-  
-## Distribution
-
-1- Clone the project to your local machine.
-2- Build and run the application using your preferred Java Script environment.
-
-Start for Project
-
-```terminal
-  npm install
+CREATE VIEW v_payments AS
+SELECT
+    p.payment_id, p.account_id, a.user_id, p.beneficiary,
+    p.beneficiary_acc_no, p.amount, p.reference_no, p.status, p.reason_code, p.created_at
+FROM payments p
+JOIN accounts a ON p.account_id = a.account_id;
 ```
 
-```bash
-  npm run start
-```
+---
 
-  
-## Technologies
+### Step 2: Configure & Start Backend (Spring Boot)
+1. Navigate to `Online Banking App Spring Boot/src/main/resources/application.properties` and verify your MySQL password:
+   ```properties
+   spring.datasource.url=jdbc:mysql://localhost:3306/demo_bank_v1
+   spring.datasource.username=root
+   spring.datasource.password=YOUR_MYSQL_PASSWORD
+   ```
+2. Open terminal in `Online Banking App Spring Boot`:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+   *The backend will run at `http://127.0.0.1:8070`.*
 
-**Language:** Java Script 
+---
 
-**Technologies:** - React, Redux, Router Dom
-- Redux Thunk
-  
-## Related projects
+### Step 3: Configure & Start Frontend (React Redux)
+1. Open terminal in `demo-bank-redux`:
+   ```bash
+   npm install --legacy-peer-deps
+   npm start
+   ```
+2. Open your web browser at `http://localhost:3000`.
 
-You can take a look at the frontends for my React Redux Online Banking App and Android Java Online Banking App projects for this application.
+---
 
-Java Spring Online Banking Rest Api [Java Spring Rest API]( https://github.com/Berko01/Advanced-Backend-Project-With-Java-Spring-Online-Banking-Rest-Api)
+## 👨‍💻 Developer
 
-Android Online Banking App: [Android Java Online Banking App]( https://github.com/Berko01/Android-Online-Banking-App-With-Java-Spring)
-
-
-
-
-  
-## Extracted Lessons
-
-React, Redux, Thunk usage. JavaScript experiences. Communication with backend. CORS Policy Setting. MUI usage. Frontend web development. JWT and cookies.
-  
-## Programmers
-
-- [@Berko01](https://github.com/Berko01) design and development.
-
-  
+Developed with ❤️ by **Yuvraj Singh**
+- GitHub: [@Yuvrajj13](https://github.com/Yuvrajj13)
+- Project Repository: [online-banking-system](https://github.com/Yuvrajj13/online-banking-system)
